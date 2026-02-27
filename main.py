@@ -8,9 +8,12 @@ from typing import List
 app = FastAPI()
 
 # 2. Load the "Brain" files
-# Ensure these files are in the same folder as main.py in your GitHub
-model = joblib.load("crop_model.joblib")
-le = joblib.load("label_encoder.joblib")
+# VIVA TIP: Ensure these files were exported from the SAME Colab session!
+try:
+    model = joblib.load("crop_model.joblib")
+    le = joblib.load("label_encoder.joblib")
+except Exception as e:
+    print(f"Error loading model files: {e}")
 
 # 3. Define the format of data the API expects
 class SoilData(BaseModel):
@@ -28,34 +31,38 @@ def home():
 
 @app.post("/predict")
 def predict(data: SoilData):
-    # 1. Force the EXACT order of columns to match the training data in Colab
-    # If the order is different, the prediction will be wrong (e.g., showing 'Coffee')
+    # 1. Strict Feature Alignment
+    # This must match X.columns from your Colab exactly.
     feature_order = ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
     
-    # 2. Convert Pydantic model to dictionary and then to a DataFrame with specific column order
+    # 2. Prepare Input
     input_dict = data.dict()
     input_df = pd.DataFrame([input_dict])[feature_order]
     
-    # 3. Make prediction using the Random Forest model
+    # 3. Model Prediction
+    # We use .item() to convert numpy types to standard Python types for JSON
     prediction = model.predict(input_df)
+    raw_val = prediction[0]
     
-    # 4. Handle Label Decoding (converting number back to Crop Name)
+    # 4. Decoding Logic
     try:
-        # If model predicts a number (e.g., 0, 1), we use the label encoder to get 'Rice'
+        # If it's a number, le.inverse_transform converts it (e.g., 20 -> 'rice')
         crop = le.inverse_transform(prediction)[0]
-    except Exception:
-        # If the model was saved to return strings directly
-        crop = str(prediction[0])
+    except:
+        # If the model predicts the string directly
+        crop = str(raw_val)
         
-    # 5. Return the final result to your Flutter App
+    # 5. Return detailed response for debugging
     return {
         "recommended_crop": crop,
         "status": "success",
-        "accuracy_used": "99.55%",
-        "order_verified": True
+        "debug_info": {
+            "input_received": input_dict,
+            "raw_prediction_idx": int(raw_val) if isinstance(raw_val, (int, float, complex)) else str(raw_val)
+        },
+        "accuracy_used": "99.55%"
     }
 
-# This allows the API to run if executed directly
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
