@@ -7,11 +7,10 @@ from typing import List
 # 1. Initialize FastAPI
 app = FastAPI()
 
-# 2. Load the "Brain" files
-# VIVA TIP: Ensure these files were exported from the SAME Colab session!
+# 2. Load the "Brain" file
 try:
+    # We focus on the model; we will use a manual list for the labels
     model = joblib.load("crop_model.joblib")
-    le = joblib.load("label_encoder.joblib")
 except Exception as e:
     print(f"Error loading model files: {e}")
 
@@ -31,34 +30,42 @@ def home():
 
 @app.post("/predict")
 def predict(data: SoilData):
-    # 1. Strict Feature Alignment
-    # This must match X.columns from your Colab exactly.
+    # 1. Force the EXACT order of columns to match your Colab Training
     feature_order = ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
     
-    # 2. Prepare Input
+    # 2. Convert input to DataFrame with specific column order
     input_dict = data.dict()
     input_df = pd.DataFrame([input_dict])[feature_order]
     
-    # 3. Model Prediction
-    # We use .item() to convert numpy types to standard Python types for JSON
+    # 3. Make prediction (returns an index number)
     prediction = model.predict(input_df)
-    raw_val = prediction[0]
+    raw_val = int(prediction[0])
     
-    # 4. Decoding Logic
+    # 4. THE FIX: Manual Label Map
+    # This list is the standard order for the 22-crop dataset.
+    # It ensures Index 8 = Jute, Index 1 = Banana, etc.
+    crops = [
+        'apple', 'banana', 'blackgram', 'chickpea', 'coconut', 
+        'coffee', 'cotton', 'grapes', 'jute', 'kidneybeans', 
+        'lentil', 'maize', 'mango', 'mothbeans', 'mungbean', 
+        'muskmelon', 'orange', 'papaya', 'pigeonpeas', 
+        'pomegranate', 'rice', 'watermelon'
+    ]
+    
     try:
-        # If it's a number, le.inverse_transform converts it (e.g., 20 -> 'rice')
-        crop = le.inverse_transform(prediction)[0]
+        # Pick the name from the list using the index
+        recommended = crops[raw_val]
     except:
-        # If the model predicts the string directly
-        crop = str(raw_val)
+        # Fallback if index is out of range
+        recommended = "Unknown Crop"
         
-    # 5. Return detailed response for debugging
+    # 5. Return result
     return {
-        "recommended_crop": crop,
+        "recommended_crop": recommended,
         "status": "success",
         "debug_info": {
             "input_received": input_dict,
-            "raw_prediction_idx": int(raw_val) if isinstance(raw_val, (int, float, complex)) else str(raw_val)
+            "raw_prediction_idx": raw_val
         },
         "accuracy_used": "99.55%"
     }
