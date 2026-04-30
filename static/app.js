@@ -41,7 +41,9 @@ form.addEventListener("submit", async (event) => {
     });
 
     if (!response.ok) {
-      throw new Error(`Request failed (${response.status})`);
+      throw new Error(
+        `Failed to get prediction: ${response.status} ${response.statusText}`
+      );
     }
 
     const data = await response.json();
