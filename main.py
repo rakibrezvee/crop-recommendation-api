@@ -1,11 +1,16 @@
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 import joblib
 import pandas as pd
 from pydantic import BaseModel
-from typing import List
+from pathlib import Path
 
 # 1. Initialize FastAPI
 app = FastAPI()
+BASE_DIR = Path(__file__).resolve().parent
+STATIC_DIR = BASE_DIR / "static"
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 # 2. Load the "Brain" files
 # VIVA TIP: Ensure these files were exported from the SAME Colab session!
@@ -25,8 +30,12 @@ class SoilData(BaseModel):
     ph: float
     rainfall: float
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
 def home():
+    return FileResponse(STATIC_DIR / "index.html")
+
+@app.get("/api")
+def api_status():
     return {"message": "Crop AI Recommendation API is Live!"}
 
 @app.post("/predict")

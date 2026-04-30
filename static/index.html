@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Crop Recommendation</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header class="hero">
+        <p class="eyebrow">Crop AI Recommendation</p>
+        <h1>Find the best crop for your soil</h1>
+        <p>
+          Provide the soil and climate values below to get an instant crop recommendation
+          from the model.
+        </p>
+      </header>
+
+      <main class="card">
+        <form id="prediction-form">
+          <div class="grid">
+            <label>
+              Nitrogen (N)
+              <input type="number" name="N" step="0.01" min="0" required />
+            </label>
+            <label>
+              Phosphorus (P)
+              <input type="number" name="P" step="0.01" min="0" required />
+            </label>
+            <label>
+              Potassium (K)
+              <input type="number" name="K" step="0.01" min="0" required />
+            </label>
+            <label>
+              Temperature (°C)
+              <input type="number" name="temperature" step="0.01" required />
+            </label>
+            <label>
+              Humidity (%)
+              <input type="number" name="humidity" step="0.01" min="0" required />
+            </label>
+            <label>
+              pH
+              <input type="number" name="ph" step="0.01" min="0" required />
+            </label>
+            <label>
+              Rainfall (mm)
+              <input type="number" name="rainfall" step="0.01" min="0" required />
+            </label>
+          </div>
+          <button type="submit" id="submit-btn">Get recommendation</button>
+        </form>
+
+        <section id="result" class="result hidden">
+          <h2>Recommended crop</h2>
+          <p id="crop-name" class="crop-name"></p>
+          <p id="status" class="status"></p>
+          <details id="debug" class="debug hidden">
+            <summary>Debug details</summary>
+            <pre id="debug-content"></pre>
+          </details>
+        </section>
+
+        <section id="error" class="error hidden"></section>
+      </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
